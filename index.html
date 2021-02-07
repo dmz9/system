@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="n.css">
+    <style>
+        body, html {
+            height: 100%;
+        }
+
+        body {
+            background-color: #cacaca;
+        }
+
+        canvas {
+            display: block;
+            background: #1c1c1c;
+        }
+    </style>
+</head>
+<body>
+<canvas id="k"></canvas>
+<script>
+    let data = gen(100)
+
+    let w = document.body.clientWidth
+    let h = document.body.clientHeight
+    let range = 100
+    /**
+     *
+     * @type {HTMLCanvasElement}
+     */
+    let k = document.getElementById('k')
+    k.width = w
+    k.height = h
+    /**
+     *
+     * @type {CanvasRenderingContext2D}
+     */
+    let d2 = k.getContext("2d")
+
+    window.setInterval(function () {
+        data = move(data)
+        d2.clearRect(0, 0, k.width, k.height)
+        scene(data)
+    }, 1000 / 25)
+
+    document.addEventListener('wheel', function (event) {
+        range = Math.max(0, range + (event.deltaY > 0 ? 10 : -10))
+    })
+
+    function gen(num) {
+        return Array(num).fill(0).map(x => [
+            Math.random() * document.body.clientWidth,
+            Math.random() * document.body.clientHeight
+        ])
+    }
+
+    function drawStar(/* @type {CanvasRenderingContext2D} */d2, coords) {
+        let x = coords[0], y = coords[1]
+        let radius = 5 + Math.floor(2 * Math.random())
+        let pi = Math.PI
+        d2.strokeWidth = 3
+        d2.strokeStyle = 'rgba(222,222,222,1)'
+        d2.fillStyle = 'orange'
+        d2.beginPath()
+        d2.arc(x + radius, y + radius, radius, pi, pi * 1.5, false)
+        d2.arc(x - radius, y + radius, radius, pi * 1.5, pi * 2, false)
+        d2.arc(x - radius, y - radius, radius, 0, pi * .5, false)
+        d2.arc(x + radius, y - radius, radius, pi * .5, pi, false)
+        d2.fill()
+    }
+
+    function connect(a, b, rangeFactor) {
+        d2.strokeStyle = `rgba(222,222,222,${rangeFactor})`
+        d2.beginPath()
+        d2.moveTo(a[0], a[1])
+        d2.lineTo(b[0], b[1])
+        d2.stroke()
+    }
+
+    function scene(stars) {
+        stars.map(x => drawStar(d2, x))
+        stars.reduce((acc, curr, i, arr) => {
+            acc.push(
+                [].concat(
+                    [curr],
+                    arr
+                        .slice(i + 1, arr.length - i)
+                        .map(x => {
+                            const dx = curr[0] - x[0];
+                            const dy = curr[1] - x[1];
+                            const rf = Math.sqrt(dx * dx + dy * dy);
+                            return [x[0], x[1], rf]
+                        })
+                        .filter(x => x[2] < range)))
+            return acc
+        }, [])
+            .filter(x => x.length > 1)
+            .map(x => {
+                x.slice(1, x.length).map(y => connect(x[0], y, 1 - y[2] / range))
+            })
+    }
+
+    function move(data) {
+        const speed = 1
+        return data
+            .map(x =>
+                [x[0] + (Math.random() - .5) * speed, x[1] + (Math.random() - .5) * speed]
+            )
+            .map(x => {
+                if (x[0] < 0) {
+                    x[0] = 0
+                }
+                if (x[1] < 0) {
+                    x[1] = 0
+                }
+                if (x[0] > w) {
+                    x[0] = w
+                }
+                if (x[1] > h) {
+                    x[1] = h
+                }
+                return x
+            })
+    }
+
+
+</script>
+</body>
+</html>
